@@ -1,7 +1,4 @@
-SS13-BT05 - Dữ liệu log sự cố đầu vào (kịch bản thực nghiệm)
-File triển khai: C:/data/logistics/logs/daily_incidents.log
 
-[TEXT]
   [2026-08-21 08:00:15] ERROR [delivery-executor] - Delivery delayed! Tracking: RK-2026-101, Hub: SG-02, Reason: Vehicle breakdown, Customer: Nguyen Van An (Phone: 0912345678)
   [2026-08-21 08:05:42] ERROR [delivery-executor] - Delivery delayed! Tracking: RK-2026-102, Hub: SG-02, Reason: Traffic jam, Customer: Tran Thi Binh (Phone: 0987654321)
   [2026-08-21 08:12:09] ERROR [payment-service] - COD settlement failed! Tracking: RK-2026-103, Hub: SG-02, Amount: 3500000, Customer: Le Van Cuong (Phone: 0903111222)

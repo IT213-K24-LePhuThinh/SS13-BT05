@@ -1,8 +1,3 @@
-SS13-BT05 - Conversation Log của toàn bộ chu trình Agent Loop (kịch bản SG-02)
---------------------------------------------------------------------------
-Kịch bản: Tắc nghẽn giao hàng nghiêm trọng + lỗi COD bất thường tại SG-02.
-Dữ liệu log đầu vào: evidence/incident-log-input.txt (10 sự cố).
---------------------------------------------------------------------------
 
 $ curl -X POST http://localhost:8081/api/v1/logistics/incidents/process \
     -H "Content-Type: application/json" \
@@ -69,7 +64,3 @@ Content-Type: application/json
   "recommendation": "KHẨN CẤP: điều thêm 3 shipper, liên hệ ngay khách hàng, đổi tuyến giao tối ưu",
   "aiSummary": "Phát hiện 7 đơn trễ và 13.200.000 VNĐ COD thất bại tại SG-02. Đã tạo báo cáo CRITICAL SG-02_incident_audit.md và nén 10 log cũ."
 }
---------------------------------------------------------------------------
-Kết luận: Hệ thống chạy hoàn hảo. Cờ CRITICAL được kích hoạt đúng ngưỡng
-(7 > 5 đơn trễ AND 13.2M > 10M VNĐ). Toàn bộ trace/span được đẩy lên Langfuse.
---------------------------------------------------------------------------
