@@ -1,0 +1,20 @@
+SS13-BT05 - Dữ liệu log sự cố đầu vào (kịch bản thực nghiệm)
+File triển khai: C:/data/logistics/logs/daily_incidents.log
+
+[TEXT]
+  [2026-08-21 08:00:15] ERROR [delivery-executor] - Delivery delayed! Tracking: RK-2026-101, Hub: SG-02, Reason: Vehicle breakdown, Customer: Nguyen Van An (Phone: 0912345678)
+  [2026-08-21 08:05:42] ERROR [delivery-executor] - Delivery delayed! Tracking: RK-2026-102, Hub: SG-02, Reason: Traffic jam, Customer: Tran Thi Binh (Phone: 0987654321)
+  [2026-08-21 08:12:09] ERROR [payment-service] - COD settlement failed! Tracking: RK-2026-103, Hub: SG-02, Amount: 3500000, Customer: Le Van Cuong (Phone: 0903111222)
+  [2026-08-21 08:18:33] ERROR [delivery-executor] - Delivery delayed! Tracking: RK-2026-104, Hub: SG-02, Reason: Sorting hub overload, Customer: Pham Thi Dung (Phone: 0977111999)
+  [2026-08-21 08:25:50] ERROR [delivery-executor] - Delivery delayed! Tracking: RK-2026-105, Hub: SG-02, Reason: Vehicle breakdown, Customer: Hoang Van Em (Phone: 0933555666)
+  [2026-08-21 08:31:02] ERROR [payment-service] - COD settlement failed! Tracking: RK-2026-106, Hub: SG-02, Amount: 4500000, Customer: Tran Thi Binh (Phone: 0987654321)
+  [2026-08-21 08:37:19] ERROR [delivery-executor] - Delivery delayed! Tracking: RK-2026-107, Hub: SG-02, Reason: Wrong address, Customer: Nguyen Thi Phuong (Phone: 0968888777)
+  [2026-08-21 08:44:26] ERROR [delivery-executor] - Delivery delayed! Tracking: RK-2026-108, Hub: SG-02, Reason: Traffic jam, Customer: Do Van Giau (Phone: 0944222333)
+  [2026-08-21 08:50:12] ERROR [payment-service] - COD settlement failed! Tracking: RK-2026-109, Hub: SG-02, Amount: 5200000, Customer: Phan Van Hanh (Phone: 0955111444)
+  [2026-08-21 08:57:03] ERROR [delivery-executor] - Delivery delayed! Tracking: RK-2026-110, Hub: SG-02, Reason: Vehicle breakdown, Customer: Vu Thi Hong (Phone: 0926000111)
+
+Thống kê kịch bản (tính cho SG-02):
+- Tổng đơn trễ (DELAYED): 7 đơn  (RK-2026-101,102,104,105,107,108,110)
+- Tổng lỗi COD: 3 đơn          (RK-2026-103,106,109 -> 3.500.000 + 4.500.000 + 5.200.000 = 13.200.000 VNĐ)
+    -> Lỗi COD 13.200.000 VNĐ > 10.000.000 VNĐ  => CRITICAL
+    -> Số đơn trễ 7 > 5                            => CRITICAL

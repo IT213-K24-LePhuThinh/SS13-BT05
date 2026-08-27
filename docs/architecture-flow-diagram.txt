@@ -1,0 +1,63 @@
+SS13-BT05 - Sơ đồ luồng tương tác (ASCII Flow Diagram)
+
+=====================================================================
+ AUTONOMOUS INCIDENT RESPONDER - 5 GIAI ĐOẠN KẾT NỐI KHÉP KÍN
+=====================================================================
+
+  +---------------------+
+  |       CLIENT        |
+  | (REST API / Trigger)|
+  +----------+----------+
+             | POST /api/v1/logistics/incidents/process
+             v
+  +---------------------+        System Prompt (4 bước)
+  |  SPRING AI CHATCLIENT | <---------------------+
+  |  (Agent Orchestrator) |                       |
+  +----------+------------+                       |
+             |                                     |
+             |   1. INCIDENT INGESTION (Đọc log)   |
+             v                                     |
+  +---------------------+   C:/data/logistics/    |
+  |  FileSystem MCP      |   logs/incidents.log   |
+  |  (fs_read_text_file) |----------------------->|
+  +----------+------------+                       |
+             |                                     |
+             |   2. DATA SANITIZATION (Lọc SQL/Path)
+             |   LogisticsSecurityValidator        |
+             |   validateSql + sanitizeReportPath  |
+             v                                     |
+  +---------------------+   rikkei_logistics_db   |
+  |  Postgres MCP Server |                        |
+  |  (postgres_run_sql)  |------------------------>|
+  +----------+------------+                       |
+             |   3. DB AUDIT (Đối soát)           |
+             |                                     |
+             |   4. ARCHIVAL & REPORTING           |
+             |   +--> fs_write_file (report)       |
+             |   +--> archiveOldLogs (Custom Tool) |
+             v                                     |
+  +---------------------+                         |
+  |  Custom Archive Tool |  C:/data/logistics/     |
+  |  (zip log -> archives)| archives/*.zip        |
+  +----------+------------+                       |
+             |                                     |
+             |   5. LLMOPS OBSERVABILITY           |
+             |   Micrometer Tracing + OTel +       |
+             |   Langfuse Tracing Gateway          |
+             v                                     |
+  +---------------------+                         |
+  | LANGUFUSE GATEWAY   |  trace/span, token,     |
+  | (OpenTelemetry OTLP)|  error status            |
+  +---------------------+ <-----------------------+
+
+---------------------------------------------------------------------
+ RANH GIỚI THÀNH PHẦN
+---------------------------------------------------------------------
+  API Client        : ngoài cùng, gửi request kích hoạt agent.
+  Spring AI ChatClient: lõi điều phối tool call, vòng lặp agent.
+  Postgres MCP Server: đối soát dữ liệu vận chuyển (giao thức MCP stdio).
+  FileSystem MCP     : đọc log, ghi báo cáo.
+  Custom Archive Tool: nén log cũ, giải phóng dung lượng.
+  Langfuse Gateway   : thu nhận trace/span/metrics qua OTLP.
+
+=====================================================================

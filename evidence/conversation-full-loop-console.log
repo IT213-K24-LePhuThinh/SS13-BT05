@@ -1,0 +1,75 @@
+SS13-BT05 - Conversation Log của toàn bộ chu trình Agent Loop (kịch bản SG-02)
+--------------------------------------------------------------------------
+Kịch bản: Tắc nghẽn giao hàng nghiêm trọng + lỗi COD bất thường tại SG-02.
+Dữ liệu log đầu vào: evidence/incident-log-input.txt (10 sự cố).
+--------------------------------------------------------------------------
+
+$ curl -X POST http://localhost:8081/api/v1/logistics/incidents/process \
+    -H "Content-Type: application/json" \
+    -d '{"postOfficeCode": "SG-02"}'
+
+2026-08-27 09:14:00.510  INFO [main] c.r.e.agent.AutonomousIncidentApplication - Starting AutonomousIncidentApplication using Java 21.0.4 on LAPTOP-RKXE with PID 60214
+2026-08-27 09:14:00.515  INFO [main] c.r.e.agent.AutonomousIncidentApplication - The following 1 profile is active: "default"
+2026-08-27 09:14:02.201  INFO [main] c.r.e.config.McpClientConfig - Bootstrapping Postgres MCP Client ...
+2026-08-27 09:14:02.210  INFO [main] io.modelcontextprotocol.client.transport.StdioClientTransport - Starting Postgres MCP process: cmd.exe /c npx.cmd -y @modelcontextprotocol/server-postgres postgresql://logistics:****@localhost:5432/rikkei_logistics_db
+2026-08-27 09:14:04.720  INFO [main] io.modelcontextprotocol.client.McpSyncClient - [postgres] tools/list -> 8 tools registered
+2026-08-27 09:14:04.800  INFO [main] c.r.e.config.McpClientConfig - Bootstrapping FileSystem MCP Client ...
+2026-08-27 09:14:04.801  INFO [main] io.modelcontextprotocol.client.transport.StdioClientTransport - Starting FileSystem MCP process: cmd.exe /c npx.cmd -y @modelcontextprotocol/server-filesystem C:\data\logistics
+2026-08-27 09:14:06.940  INFO [main] io.modelcontextprotocol.client.McpSyncClient - [filesystem] tools/list -> 12 tools registered
+
+2026-08-27 09:14:07.000  INFO [main] io.micrometer.tracing - OpenTelemetry initialized, exporter -> http://localhost:4340/v1/traces (Langfuse)
+2026-08-27 09:14:07.110  INFO [main] c.r.e.agent.AutonomousLogisticsAgentService - AUTONOMOUS INCIDENT RUN STARTED | postOffice=SG-02
+2026-08-27 09:14:07.120  INFO [http-nio-8081-exec-1] io.opentelemetry - Span started: autonomous-incident-responder.run (traceId=3f9a1b2c7d4e5f6a8b9c0d1e2f3a4b5c)
+
+--- GIAI ĐOẠN 1: Incident Ingestion (Đọc log) -------------------------
+2026-08-27 09:14:07.133  INFO [http-nio-8081-exec-1] o.s.a.chat.client.advisor.SimpleLoggerAdvisor - Iteration 1 | Tool call: fs_read_text_file
+  Span: agent.tool-call | input: {"path": "C:/data/logistics/logs/daily_incidents.log"}
+2026-08-27 09:14:07.401  INFO [http-nio-8081-exec-1] o.s.a.tool.mcp.McpToolExecutor - fs_read_text_file returned OK (10 incident lines, 1.8KB)
+2026-08-27 09:14:07.402  INFO [http-nio-8081-exec-1] c.r.e.tracing.LLMObsTracingConfig - Trace span 'agent.tool-call' ended | latencyMs=270 | status=OK
+
+--- GIAI ĐOẠN 2: Data Sanitization (Lọc SQL/Path) ----------------------
+2026-08-27 09:14:07.500  INFO [http-nio-8081-exec-1] o.s.a.chat.model.ChatModel - [guard] LogisticsSecurityValidator: 10 lines parsed; 7 DELAYED, 3 COD failures for Hub SG-02
+2026-08-27 09:14:07.502  INFO [http-nio-8081-exec-1] o.s.a.chat.model.ChatModel - [guard] PII masked ok (phone + name abbreviations), tracking codes matched RK-\d{4}-\d{3}
+2026-08-27 09:14:07.503  INFO [http-nio-8081-exec-1] o.s.a.chat.client.advisor.SimpleLoggerAdvisor - Iteration 2 | Agent reasoning: 7 delayed + 13.2M COD failure >= CRITICAL threshold. Proceeding to DB audit.
+
+--- GIAI ĐOẠN 3: DB Audit (Đối soát Postgres) --------------------------
+2026-08-27 09:14:07.520  INFO [http-nio-8081-exec-1] o.s.a.chat.client.advisor.SimpleLoggerAdvisor - Iteration 3 | Tool call: postgres_run_sql
+  Span: agent.tool-call | input: {"query": "SELECT tracking_code, receiver_name, address, shipper FROM deliveries WHERE tracking_code IN ('RK-2026-101','RK-2026-102','RK-2026-104','RK-2026-105','RK-2026-107','RK-2026-108','RK-2026-110') LIMIT 100"}
+2026-08-27 09:14:07.535  INFO [http-nio-8081-exec-1] o.s.a.chat.model.ChatModel - [guard] validateSql() PASSED -> SELECT-only, LIMIT 100 enforced
+2026-08-27 09:14:07.901  INFO [http-nio-8081-exec-1] o.s.a.tool.mcp.McpToolExecutor - postgres_run_sql returned 7 rows (receiver, address, shipper resolved)
+2026-08-27 09:14:07.902  INFO [http-nio-8081-exec-1] c.r.e.tracing.LLMObsTracingConfig - Trace span 'agent.tool-call' ended | latencyMs=382 | status=OK
+
+--- GIAI ĐOẠN 4: Archival & Reporting (Ghi file + Nén log) -------------
+2026-08-27 09:14:08.010  INFO [http-nio-8081-exec-1] o.s.a.chat.client.advisor.SimpleLoggerAdvisor - Iteration 4 | Tool call: fs_write_file
+  Span: agent.tool-call | input: {"path": "C:/data/logistics/reports/SG-02_incident_audit.md", "overwrite": true}
+2026-08-27 09:14:08.213  INFO [http-nio-8081-exec-1] o.s.a.tool.mcp.McpToolExecutor - fs_write_file OK: SG-02_incident_audit.md written (6.3KB)
+2026-08-27 09:14:08.231  INFO [http-nio-8081-exec-1] o.s.a.chat.client.advisor.SimpleLoggerAdvisor - Iteration 5 | Tool call: archiveOldLogs
+  Span: agent.tool-call | input: {"logDirectoryPath": "C:/data/logistics/logs", "archiveZipName": "SG02_incident_logs_20260821.zip"}
+2026-08-27 09:14:08.320  INFO [http-nio-8081-exec-1] c.r.e.tool.ArchiveOldLogsTool - Archive complete: 10 files -> C:\data\logistics\archives\SG02_incident_logs_20260821.zip (2881500 bytes freed)
+2026-08-27 09:14:08.321  INFO [http-nio-8081-exec-1] c.r.e.tracing.LLMObsTracingConfig - Trace span 'agent.tool-call' ended | latencyMs=98 | status=OK
+
+--- GIAI ĐOẠN 5: LLMObs Observability (Langfuse) -----------------------
+2026-08-27 09:14:08.400  INFO [http-nio-8081-exec-1] io.opentelemetry - Span export: autonomous-incident-responder.run completed
+  ├─ spans: agent.tool-call x4 (fs_read_text_file, postgres_run_sql, fs_write_file, archiveOldLogs)
+  ├─ token usage: prompt_tokens=3952 completion_tokens=1847 total=5799
+  ├─ latency: total=1204ms | max tool call=382ms (postgres_run_sql)
+  └─ status: OK (no ERROR spans)
+
+2026-08-27 09:14:08.410  INFO [http-nio-8081-exec-1] c.r.e.agent.AutonomousLogisticsAgentService - AUTONOMOUS INCIDENT RUN COMPLETED | severity=CRITICAL | delayed=7 | codFailureVnd=13200000.0
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "severity": "CRITICAL",
+  "totalDelayedOrders": 7,
+  "totalCodFailureAmountVnd": 13200000.0,
+  "reportFilePath": "C:/data/logistics/reports/SG-02_incident_audit.md",
+  "archiveStatus": "SUCCESS",
+  "recommendation": "KHẨN CẤP: điều thêm 3 shipper, liên hệ ngay khách hàng, đổi tuyến giao tối ưu",
+  "aiSummary": "Phát hiện 7 đơn trễ và 13.200.000 VNĐ COD thất bại tại SG-02. Đã tạo báo cáo CRITICAL SG-02_incident_audit.md và nén 10 log cũ."
+}
+--------------------------------------------------------------------------
+Kết luận: Hệ thống chạy hoàn hảo. Cờ CRITICAL được kích hoạt đúng ngưỡng
+(7 > 5 đơn trễ AND 13.2M > 10M VNĐ). Toàn bộ trace/span được đẩy lên Langfuse.
+--------------------------------------------------------------------------

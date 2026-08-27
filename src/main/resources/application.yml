@@ -1,0 +1,32 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: rikkei-express-autonomous-agent
+  main:
+    banner-mode: "off"
+  ai:
+    model:
+      mcp:
+        client:
+          enabled: false
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://localhost:4340/v1/traces
+
+logging:
+  config: classpath:logback-spring.xml
+
+rikkei:
+  agent:
+    max-tool-iterations: 8
+  langfuse:
+    endpoint: http://localhost:4340/v1/traces
+    public-key: RIKKEI_PK_demo
+    secret-key: ${LANGFUSE_SECRET_KEY:demo-secret}
